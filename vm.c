@@ -111,21 +111,21 @@ static inline void res(uint16_t i) {} // unused
 
 // TRAPS
 static inline void trp_getc() {
-    reg[R0] = getch();
+    reg[R0] = getchar();
 }
 static inline void trp_out() {
     printf("%c", (char)reg[R0]);
 }
 static inline void trp_puts() {
-    char *c = mem + reg[R0];
-    while(*c!=NULL) {
-        printf("%c", c);
+    char *c = (char*)mem + reg[R0];
+    while(*c) {
+        printf("%c", *c);
         c++;
     }
 }
-static inline trp_in() {} // TODO
-static inline trp_putsp() {} // TODO
-static inline trp_halt() {} // TODO
+static inline void trp_in() {} // TODO
+static inline void trp_putsp() {} // TODO
+static inline void trp_halt() {} // TODO
 
 trp_ex_f trp_ex[6] = { trp_getc, trp_out, trp_puts, trp_in, trp_putsp, trp_halt };
 enum { trp_offset = 0x20 };
