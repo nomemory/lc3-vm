@@ -4,14 +4,16 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "vm_dbg.h"
+
 /* platform dep (unix) */
-#include <signal.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/termios.h>
-#include <sys/mman.h>
+// #include <signal.h>
+// #include <unistd.h>
+// #include <fcntl.h>
+// #include <sys/time.h>
+// #include <sys/types.h>
+// #include <sys/termios.h>
+// #include <sys/mman.h>
 
 #define NOPS (16)
 
@@ -151,50 +153,9 @@ static inline void trp_halt() {
 trp_ex_f trp_ex[6] = { trp_getc, trp_out, trp_puts, trp_in, trp_putsp, trp_halt };
 enum { trp_offset = 0x20 };
 static inline void trap(uint16_t i) {
-    printf("trp=%d\n", TRP(i));
-    exit(0);
-    // trp_ex[trp_offset + TRP(i)]();
+    trp_ex[TRP(i)-trp_offset]();
 }
 op_ex_f op_ex[NOPS] = { /*0*/ br, add, ld, st, jsr, and, ldr, str, rti, not, ldi, sti, jmp, res, lea, trap };
-
-// DEBUG
-void fprintf_binary(FILE *f, uint16_t num) {
-    int c = 16;
-    while(c-->0) {
-        if ((c+1)%4==0) {
-            fprintf(f, " ");
-        }
-        fprintf(f, "%d", (num>>c)&1);
-    }
-}
-
-void fprintf_inst(FILE *f, uint16_t instr) {
-    fprintf(f, "instr=%u, binary=", instr);
-    fprintf_binary(f, instr);
-    fprintf(f, "\n");
-}
-
-void fprintf_mem(FILE *f, uint16_t *mem, uint16_t from, uint16_t to) {
-    for(int i = from; i < to; i++) {
-        fprintf(f, "mem[%d]=", i);
-        fprintf_binary(f, mem[i]);
-        fprintf(f, "\n");
-    }
-}
-
-void fprintf_mem_nonzero(FILE *f, uint16_t *mem, uint32_t stop) {
-    for(int i = 0; i < stop; i++) {
-        if (mem[i]!=0) {
-           fprintf(f, "mem[%d]=", i);
-            fprintf_binary(f, mem[i]);
-            fprintf(f, "\n"); 
-        }
-    }
-}
-
-void fprintf_reg(FILE *f, uint16_t *reg, int idx) {
-    fprintf(stdout, "reg[%d]=%hu\n", idx, reg[idx]);
-}
 
 void ld_img(char *fname) {
     FILE *in = fopen(fname, "rb");
@@ -218,7 +179,6 @@ void start() {
         op_ex[OPC(i)](i);   
     }
 }
-
 
 int main(void) {
     ld_img("out.obj");
