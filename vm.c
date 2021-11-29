@@ -15,7 +15,7 @@
 
 #define NOPS (16)
 
-#define OPC(i) ((i)<<12)
+#define OPC(i) ((i)>>12)
 #define DR(i) (((i)>>9)&0x7)
 #define SR1(i) (((i)>>6)&0x7)
 #define SR2(i) ((i)&0x7)
@@ -40,6 +40,7 @@ enum traps { GETC = 0x20, OUT = 0x21, PUTS = 0x22, IN = 0x23, PUTSP = 0x24, HALT
 
 uint16_t mem[UINT16_MAX] = {0};
 uint16_t reg[RCNT] = {0};
+uint16_t PC_START = 0x3000;
 
 static inline uint16_t mr(uint16_t address) { 
     return mem[address]; 
@@ -117,30 +118,110 @@ static inline void trp_out() {
     printf("%c", (char)reg[R0]);
 }
 static inline void trp_puts() {
-    char *c = (char*)mem + reg[R0];
-    while(*c) {
-        printf("%c", *c);
+    uint16_t *c = mem + reg[R0];
+    while(c) {
+        printf("%c", (char)*c);
         c++;
     }
 }
-static inline void trp_in() {} // TODO
-static inline void trp_putsp() {} // TODO
-static inline void trp_halt() {} // TODO
-
+static inline void trp_in() {
+    printf("Enter a character: ");
+    char c = getchar();
+    putc(c, stdout);
+    reg[R0] = (uint16_t)c;
+}
+static inline void trp_putsp() {
+    uint16_t* c = mem + reg[R0];
+    while (*c)
+    {
+        char char1 = (*c) & 0xFF;
+        putc(char1, stdout);
+        char char2 = (*c) >> 8;
+        if (char2) putc(char2, stdout);
+        ++c;
+    }
+    fflush(stdout);
+}
+bool running = true;
+static inline void trp_halt() { 
+    puts("HALT");
+    fflush(stdout);
+    running = false;
+} 
 trp_ex_f trp_ex[6] = { trp_getc, trp_out, trp_puts, trp_in, trp_putsp, trp_halt };
 enum { trp_offset = 0x20 };
 static inline void trap(uint16_t i) {
-    trp_ex[trp_offset + TRP(i)]();
+    printf("trp=%d\n", TRP(i));
+    exit(0);
+    // trp_ex[trp_offset + TRP(i)]();
+}
+op_ex_f op_ex[NOPS] = { /*0*/ br, add, ld, st, jsr, and, ldr, str, rti, not, ldi, sti, jmp, res, lea, trap };
+
+// DEBUG
+void fprintf_binary(FILE *f, uint16_t num) {
+    int c = 16;
+    while(c-->0) {
+        if ((c+1)%4==0) {
+            fprintf(f, " ");
+        }
+        fprintf(f, "%d", (num>>c)&1);
+    }
 }
 
-op_ex_f op_ex[NOPS] = { br, add, ld, st, jsr, and, ldr, str, rti, not, ldi, sti, jmp, res, lea, trap };
-int main(void) {
-    enum { PC_START = 0x300 };
+void fprintf_inst(FILE *f, uint16_t instr) {
+    fprintf(f, "instr=%u, binary=", instr);
+    fprintf_binary(f, instr);
+    fprintf(f, "\n");
+}
+
+void fprintf_mem(FILE *f, uint16_t *mem, uint16_t from, uint16_t to) {
+    for(int i = from; i < to; i++) {
+        fprintf(f, "mem[%d]=", i);
+        fprintf_binary(f, mem[i]);
+        fprintf(f, "\n");
+    }
+}
+
+void fprintf_mem_nonzero(FILE *f, uint16_t *mem, uint32_t stop) {
+    for(int i = 0; i < stop; i++) {
+        if (mem[i]!=0) {
+           fprintf(f, "mem[%d]=", i);
+            fprintf_binary(f, mem[i]);
+            fprintf(f, "\n"); 
+        }
+    }
+}
+
+void fprintf_reg(FILE *f, uint16_t *reg, int idx) {
+    fprintf(stdout, "reg[%d]=%hu\n", idx, reg[idx]);
+}
+
+void ld_img(char *fname) {
+    FILE *in = fopen(fname, "rb");
+    if (NULL==in) {
+        fprintf(stderr, "Cannot open file %s.\n", fname);
+        exit(1);
+    }
+    uint16_t *p = mem + PC_START;
+    fread(p, sizeof(uint16_t), (UINT16_MAX-PC_START), in);
+    fclose(in);
+}
+
+void start() {
     reg[RPC] = PC_START;
-    bool running = true;
     while(running) {
         uint16_t i = mr(reg[RPC]++);
-        op_ex[OPC(i)](i);
+        fprintf_binary(stdout, i);
+        printf("\n");
+        printf(">> %d", OPC(i));
+        printf("\n");
+        op_ex[OPC(i)](i);   
     }
+}
+
+
+int main(void) {
+    ld_img("out.obj");
+    start();
     return 0;
 }
