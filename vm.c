@@ -93,7 +93,7 @@ static inline void ld(uint16_t i) {
     uf(DR(i)); 
 }
 static inline void ldr(uint16_t i) {
-    reg[DR(i)] = mr(SR1(i) + POFF(i)); 
+    reg[DR(i)] = mr(reg[SR1(i)] + POFF(i));
     uf(reg[DR(i)]); 
 }
 static inline void lea(uint16_t i) { 
@@ -146,8 +146,6 @@ static inline void trp_putsp() {
 }
 bool running = true;
 static inline void trp_halt() { 
-    puts("HALT");
-    fflush(stdout);
     running = false;
 } 
 trp_ex_f trp_ex[6] = { trp_getc, trp_out, trp_puts, trp_in, trp_putsp, trp_halt };
@@ -172,16 +170,24 @@ void start() {
     reg[RPC] = PC_START;
     while(running) {
         uint16_t i = mr(reg[RPC]++);
-        fprintf_binary(stdout, i);
-        printf("\n");
-        printf(">> %d", OPC(i));
-        printf("\n");
-        op_ex[OPC(i)](i);   
+        op_ex[OPC(i)](i);
     }
 }
 
 int main(void) {
     ld_img("out.obj");
+    fprintf(stdout, "-------------------------------------\n");
+    fprintf(stdout, "Occupied memory after program load:\n");
+    fprintf(stdout, "-------------------------------------\n");
+    fprintf_mem_nonzero(stdout, mem, UINT16_MAX);
     start();
+    fprintf(stdout, "----------------------------------------\n");
+    fprintf(stdout, "Occupied memory after program execution:\n");
+    fprintf(stdout, "----------------------------------------\n");
+    fprintf_mem_nonzero(stdout, mem, UINT16_MAX);
+    fprintf(stdout, "----------------------------------\n");
+    fprintf(stdout, "Registers after program execution:\n");
+    fprintf(stdout, "----------------------------------\n");
+    fprintf_reg_all(stdout, reg, RCNT);
     return 0;
 }
