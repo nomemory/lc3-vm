@@ -6,15 +6,6 @@
 
 #include "vm_dbg.h"
 
-/* platform dep (unix) */
-// #include <signal.h>
-// #include <unistd.h>
-// #include <fcntl.h>
-// #include <sys/time.h>
-// #include <sys/types.h>
-// #include <sys/termios.h>
-// #include <sys/mman.h>
-
 #define NOPS (16)
 
 #define OPC(i) ((i)>>12)
@@ -31,6 +22,8 @@
 #define FL(i) (((i)>>11)&1)
 #define BR(i) (((i)>>6)&0x7)
 #define TRP(i) ((i)&0xFF)
+
+bool running = true;
 
 typedef void (*op_ex_f)(uint16_t i);
 typedef void (*trp_ex_f)();
@@ -94,7 +87,7 @@ static inline void ld(uint16_t i) {
 }
 static inline void ldr(uint16_t i) {
     reg[DR(i)] = mr(reg[SR1(i)] + POFF(i));
-    uf(reg[DR(i)]); 
+    uf(reg[DR(i)]);
 }
 static inline void lea(uint16_t i) { 
     reg[DR(i)] =reg[RPC] + POFF9(i); 
@@ -112,7 +105,6 @@ static inline void str(uint16_t i) {
 static inline void rti(uint16_t i) {} // unused
 static inline void res(uint16_t i) {} // unused
 
-// TRAPS
 static inline void trp_getc() {
     reg[R0] = getchar();
 }
@@ -127,9 +119,7 @@ static inline void trp_puts() {
     }
 }
 static inline void trp_in() {
-    printf("Enter a character: ");
     char c = getchar();
-    putc(c, stdout);
     reg[R0] = (uint16_t)c;
 }
 static inline void trp_putsp() {
@@ -144,30 +134,39 @@ static inline void trp_putsp() {
     }
     fflush(stdout);
 }
-bool running = true;
+
 static inline void trp_halt() { 
     running = false;
 } 
-trp_ex_f trp_ex[6] = { trp_getc, trp_out, trp_puts, trp_in, trp_putsp, trp_halt };
+
+static inline void trp_in_u16() {
+    fscanf(stdin, "%hu", &reg[R0]);
+}
+
+static inline void trp_out_u16() {
+    fprintf(stdout, "%hu\n", reg[R0]);
+}
+
+trp_ex_f trp_ex[8] = { trp_getc, trp_out, trp_puts, trp_in, trp_putsp, trp_halt, trp_in_u16, trp_out_u16 };
 enum { trp_offset = 0x20 };
 static inline void trap(uint16_t i) {
     trp_ex[TRP(i)-trp_offset]();
 }
 op_ex_f op_ex[NOPS] = { /*0*/ br, add, ld, st, jsr, and, ldr, str, rti, not, ldi, sti, jmp, res, lea, trap };
 
-void ld_img(char *fname) {
+void ld_img(char *fname, uint16_t offset) {
     FILE *in = fopen(fname, "rb");
     if (NULL==in) {
         fprintf(stderr, "Cannot open file %s.\n", fname);
         exit(1);
     }
-    uint16_t *p = mem + PC_START;
+    uint16_t *p = mem + PC_START + offset;
     fread(p, sizeof(uint16_t), (UINT16_MAX-PC_START), in);
     fclose(in);
 }
 
-void start() {
-    reg[RPC] = PC_START;
+void start(uint16_t offset) {
+    reg[RPC] = PC_START + offset;
     while(running) {
         uint16_t i = mr(reg[RPC]++);
         op_ex[OPC(i)](i);
@@ -175,12 +174,12 @@ void start() {
 }
 
 int main(void) {
-    ld_img("out.obj");
+    ld_img("sum.obj", 0x0);
     fprintf(stdout, "-------------------------------------\n");
     fprintf(stdout, "Occupied memory after program load:\n");
     fprintf(stdout, "-------------------------------------\n");
     fprintf_mem_nonzero(stdout, mem, UINT16_MAX);
-    start();
+    start(0x0);
     fprintf(stdout, "----------------------------------------\n");
     fprintf(stdout, "Occupied memory after program execution:\n");
     fprintf(stdout, "----------------------------------------\n");
