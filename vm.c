@@ -63,7 +63,7 @@ static inline void tgetc() { reg[R0] = getchar(); }
 static inline void tout() { fprintf(stdout, "%c", (char)reg[R0]); }
 static inline void tputs() {
     uint16_t *p = mem + reg[R0];
-    while(p) {
+    while(*p) {
         fprintf(stdout, "%c", (char)*p);
         p++;
     }
