@@ -20,6 +20,6 @@ Compile the `vm`:
 
 Run the program:
 
-`./a.out`
+`./a.out simple_program.obj`
 
 
