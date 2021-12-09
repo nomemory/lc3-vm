@@ -31,7 +31,6 @@ typedef void (*trp_ex_f)();
 enum { trp_offset = 0x20 };
 enum regist { R0 = 0, R1, R2, R3, R4, R5, R6, R7, RPC, RCND, RCNT };
 enum flags { FP = 1 << 0, FZ = 1 << 1, FN = 1 << 2 };
-enum traps { GETC = 0x20, OUT = 0x21, PUTS = 0x22, IN = 0x23, PUTSP = 0x24, HALT = 0x25 };
 
 uint16_t mem[UINT16_MAX] = {0};
 uint16_t reg[RCNT] = {0};
