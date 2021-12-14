@@ -54,9 +54,9 @@ static inline void jmp(uint16_t i)  { reg[RPC] = reg[BR(i)]; }
 static inline void ld(uint16_t i)   { reg[DR(i)] = mr(reg[RPC] + POFF9(i)); uf(DR(i)); }
 static inline void ldr(uint16_t i)  { reg[DR(i)] = mr(reg[SR1(i)] + POFF(i)); uf(DR(i)); }
 static inline void lea(uint16_t i)  { reg[DR(i)] =reg[RPC] + POFF9(i); uf(DR(i)); }
-static inline void st(uint16_t i)   { mw(reg[RPC] + POFF9(i), DR(i)); }
-static inline void sti(uint16_t i)  { mw(mr(reg[RPC] + POFF9(i)), DR(i)); }
-static inline void str(uint16_t i)  { mw(reg[SR1(i)] + POFF(i), DR(i)); }
+static inline void st(uint16_t i)   { mw(reg[RPC] + POFF9(i), reg[DR(i))]; }
+static inline void sti(uint16_t i)  { mw(mr(reg[RPC] + POFF9(i)), reg[DR(i))]; }
+static inline void str(uint16_t i)  { mw(reg[SR1(i)] + POFF(i), reg[DR(i))]; }
 static inline void rti(uint16_t i) {} // unused
 static inline void res(uint16_t i) {} // unused
 static inline void tgetc() { reg[R0] = getchar(); }
