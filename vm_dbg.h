@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 void fprintf_binary(FILE *f, uint16_t num);
 void fprintf_inst(FILE *f, uint16_t instr);
