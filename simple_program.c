@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 /*
 Our goal is to take the ten numbers which are stored in memory locations x3100 through
