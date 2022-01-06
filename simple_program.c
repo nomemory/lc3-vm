@@ -3,15 +3,15 @@
 #include <stdint.h>
 
 /*
-Our goal is to take the ten numbers which are stored in memory locations x3100 through
-x3109, and add them together, leaving the result in register 1.
+Our goal is to take the ten numbers which are stored in memory locations x300A through
+x3013, and add them together, leaving the result in register 1.
 */
 
 uint16_t program[] = {        
     /*mem[0x3000]=*/   0x5260,    //  0101 0010 0110 0000             AND R1,R1,x0    ;clear R1, to be used for the running sum               
     /*mem[0x3001]=*/   0x5920,    //  0101 1001 0010 0000             AND R4,R4,x0    ;clear R4, to be used as a counter                      
     /*mem[0x3002]=*/   0x192A,    //  0001 1001 0010 1010             ADD R4,R4,xB    ;load R4 with #10, the number of times to add           
-    /*mem[0x3003]=*/   0xE406,    //  1110 0100 0000 0110             LEA R2,x7       ;load the starting address of the data          
+    /*mem[0x3003]=*/   0xE406,    //  1110 0100 0000 0110             LEA R2,x6       ;load the starting address of the data          
     /*mem[0x3004]=*/   0x6680,    //  0110 0110 1000 0000     LOOP    LDR R3,R2,x0    ;load the next number to be added                       
     /*mem[0x3005]=*/   0x14A1,    //  0001 0100 1010 0001             ADD R2,R2,x1    ;increment the pointer
     /*mem[0x3006]=*/   0x1243,    //  0001 0010 0100 0011             ADD R1,R1,R3    ;add the next number to the running sum
